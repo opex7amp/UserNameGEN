@@ -8,8 +8,7 @@ import os
 from termcolor import colored
 
 
-
-stop_spinner = False  # dont touch this
+stop_spinner = False  # don't touch this
 
 def read_words_from_file(file_path):
     with open(file_path, 'r') as file:
@@ -53,15 +52,19 @@ def main_menu():
     print(colored("1. Generate Usernames", "cyan"))
     print(colored("2. Exit", "cyan"))
 
-def spinner(duration=5, speed=0.2):
-    global stop_spinner
-    spinner_chars = itertools.cycle(['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'])
-    start_time = time.time()
-    while not stop_spinner and time.time() - start_time < duration:
-        sys.stdout.write(colored(next(spinner_chars), "cyan"))
+def generate_and_print_usernames(num_usernames, adjectives, nouns, output_file):
+    for i in range(1, num_usernames + 1):
+        username = generate_username(adjectives, nouns)
+        color = "cyan"
+        print(colored(f"{i} | {username}", color))
+        output_file.write(f"{i} | {username}\n")
         sys.stdout.flush()
-        time.sleep(speed)
-        sys.stdout.write('\b\b\b')
+        time.sleep(0.5)
+
+def save_usernames_to_file(usernames, output_file):
+    with open(output_file, 'w') as file:
+        for username in usernames:
+            file.write(f"{username}\n")
 
 def funny_exit_message(num_usernames):
     messages = [
@@ -72,28 +75,32 @@ def funny_exit_message(num_usernames):
         "You asked, we delivered! Specified usernames generated!",
     ]
     message = random.choice(messages)
+    print()
     print(colored(message, "green"))
-    print(f"\n" * 2)  
-    sys.exit()
+
+def spinner(duration=5, speed=0.2):
+    global stop_spinner
+    spinner_chars = itertools.cycle(['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'])
+    start_time = time.time()
+    while not stop_spinner and time.time() - start_time < duration:
+        sys.stdout.write(colored(next(spinner_chars), "cyan"))
+        sys.stdout.flush()
+        time.sleep(speed)
+        sys.stdout.write('\b\b\b')
 
 if __name__ == "__main__":
-    adjectives_file_path = os.environ.get("ADJECTIVES")
-    nouns_file_path = os.environ.get("NOUNS")
+    adjectives_file = os.environ.get("ADJECTIVES")
+    nouns_file = os.environ.get("NOUNS")
+    output_filename = os.environ.get("GENERATED")
 
-    if not adjectives_file_path or not nouns_file_path:
-        print(colored("Error: Please provide file paths for adjectives and nouns.", "red"))
-        sys.exit(1)
-
-    adjectives = read_words_from_file(adjectives_file_path)
-    nouns = read_words_from_file(nouns_file_path)
+    adjectives = read_words_from_file(adjectives_file)
+    nouns = read_words_from_file(nouns_file)
 
     spinner_thread = threading.Thread(target=spinner, args=(5, 0.2))
     spinner_thread.start()
 
-    
     time.sleep(2)
 
-    
     stop_spinner = True
     spinner_thread.join()
 
@@ -104,17 +111,15 @@ if __name__ == "__main__":
         if choice == "1":
             try:
                 num_usernames = int(input(colored("Enter how many usernames you want: ", "cyan")))
-                print("\n" * 3)  
-                for index in range(1, num_usernames + 1):
-                    username = generate_username(adjectives, nouns)
-                    color = "cyan"
-                    print(colored(f"{index} | {username}", color))
-                    time.sleep(0.5)  
-                  
-                    if index < num_usernames:
-                        print()  
-                      
+                print()
+
+                with open(output_filename, 'w') as output_file:
+                    generate_and_print_usernames(num_usernames, adjectives, nouns, output_file)
+
+                print()
                 funny_exit_message(num_usernames)
+                sys.exit()
+
             except ValueError:
                 print(colored("Invalid input. Please enter a valid number.", "red"))
 
@@ -123,5 +128,6 @@ if __name__ == "__main__":
 
         else:
             print(colored("Invalid choice. Please try again.", "red"))
+
 
 
